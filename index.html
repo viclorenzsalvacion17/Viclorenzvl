@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mines Prediction Tool</title>
+
+<!-- Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root{
+  --bg1:#0f2027;
+  --bg2:#203a43;
+  --bg3:#2c5364;
+  --glass:rgba(255,255,255,0.15);
+  --border:rgba(255,255,255,0.3);
+  --safe:#00ff99;
+  --mine:#ff4d4d;
+}
+
+body{
+  margin:0;
+  font-family: 'Poppins', sans-serif;
+  min-height:100vh;
+  background: linear-gradient(-45deg,var(--bg1),var(--bg2),var(--bg3));
+  background-size:400% 400%;
+  animation:bgMove 20s ease infinite;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#fff;
+}
+
+@keyframes bgMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.container{
+  width:95%;
+  max-width:420px;
+  background:var(--glass);
+  backdrop-filter:blur(15px);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 0 30px rgba(0,0,0,0.4);
+  text-align:center;
+}
+
+h1{
+  margin:5px 0;
+  font-size:1.4rem;
+}
+
+.platform{
+  font-weight:600;
+  color:#00eaff;
+  margin-bottom:10px;
+}
+
+select,input{
+  width:100%;
+  padding:10px;
+  border-radius:12px;
+  border:none;
+  outline:none;
+  margin:6px 0;
+  font-size:0.95rem;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:8px;
+  margin:15px 0;
+  justify-items:center;
+}
+
+.tile{
+  width:55px;
+  height:55px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.2);
+  cursor:pointer;
+  transition:0.3s;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
+
+.tile:hover{
+  transform:scale(1.05);
+}
+
+.tile.safe{
+  background:rgba(0,255,153,0.25);
+  box-shadow:0 0 20px var(--safe);
+  animation:pulse 1.5s infinite;
+}
+
+.tile.mine{
+  background:rgba(255,77,77,0.25);
+  box-shadow:0 0 20px var(--mine);
+  animation:pop 0.4s ease;
+}
+
+@keyframes pulse{
+  0%{box-shadow:0 0 10px var(--safe)}
+  50%{box-shadow:0 0 25px var(--safe)}
+  100%{box-shadow:0 0 10px var(--safe)}
+}
+
+@keyframes pop{
+  0%{transform:scale(0.6);opacity:0}
+  100%{transform:scale(1);opacity:1}
+}
+
+button{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  margin-top:8px;
+  font-size:1rem;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.predict{
+  background:linear-gradient(135deg,#00ffcc,#00c6ff);
+  color:#000;
+  font-weight:600;
+}
+
+.predict:hover{transform:translateY(-2px)}
+
+.reset{
+  background:linear-gradient(135deg,#ff5f6d,#ffc371);
+  font-weight:600;
+}
+
+.join{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:12px;
+}
+
+.telegram{
+  background:linear-gradient(135deg,#1da1f2,#0d8ddb);
+  color:#fff;
+}
+
+.youtube{
+  background:linear-gradient(135deg,#ff0000,#c40000);
+  color:#fff;
+}
+
+.telegram:hover,.youtube:hover{
+  transform:scale(1.05);
+}
+
+.footer{
+  margin-top:15px;
+  font-size:0.75rem;
+  opacity:0.8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Mines Prediction Tool</h1>
+  <div class="platform" id="platformName">Stake</div>
+
+  <select id="platform">
+    <option>Stake</option>
+    <option>1win</option>
+    <option>Tashan Win</option>
+    <option>Bet365</option>
+  </select>
+
+  <input type="text" id="seed" placeholder="Enter Your Seeds">
+
+  <div class="grid" id="grid"></div>
+
+  <button class="predict" onclick="predict()">Predict Safe Mines</button>
+  <button class="reset" onclick="resetGrid()">Reset Game</button>
+
+  <div class="join">
+    <button class="telegram"><i class="fab fa-telegram"></i> Join Telegram</button>
+    <button class="youtube"><i class="fab fa-youtube"></i> Join YouTube</button>
+  </div>
+
+  <div class="footer">Created by Fun Education</div>
+</div>
+
+<script>
+const grid = document.getElementById("grid");
+const platformSelect = document.getElementById("platform");
+const platformName = document.getElementById("platformName");
+
+platformSelect.addEventListener("change",()=>{
+  platformName.textContent = platformSelect.value;
+});
+
+function createGrid(){
+  grid.innerHTML="";
+  for(let i=0;i<25;i++){
+    const tile=document.createElement("div");
+    tile.className="tile";
+    grid.appendChild(tile);
+  }
+}
+createGrid();
+
+function predict(){
+  resetGrid();
+  const tiles=document.querySelectorAll(".tile");
+  let indexes=[...Array(25).keys()];
+
+  // seed-based shuffle
+  let seed=document.getElementById("seed").value.length || 5;
+  indexes.sort(()=>Math.random()-0.5*(seed%3+1));
+
+  let safe=indexes.slice(0,5);
+  let mines=indexes.slice(5);
+
+  safe.forEach(i=>tiles[i].classList.add("safe"));
+  mines.forEach(i=>tiles[i].classList.add("mine"));
+}
+
+function resetGrid(){
+  document.querySelectorAll(".tile").forEach(t=>{
+    t.classList.remove("safe","mine");
+  });
+}
+</script>
+
+</body>
+</html>
